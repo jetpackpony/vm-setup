@@ -1,0 +1,21 @@
+version: '3'
+services:
+  nginx: 
+    image: nginx:alpine
+    container_name: vmn
+    restart: always
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    ports:
+      - 80:80
+      - 443:443
+  
+  app1:
+    image: jetpackpony/node-app-1
+    container_name: app1
+    restart: always
+
+  app2:
+    image: jetpackpony/node-app-2
+    container_name: app2
+    restart: always
