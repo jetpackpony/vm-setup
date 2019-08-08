@@ -18,7 +18,7 @@ services:
 
   letsencrypt:
     image: jrcs/letsencrypt-nginx-proxy-companion
-    container_name: nginx-proxy-le
+    container_name: letsencrypt
     volumes:
       - conf:/etc/nginx/conf.d
       - vhost:/etc/nginx/vhost.d
@@ -28,6 +28,8 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     network_mode: bridge
     restart: always
+    environment:
+      - NGINX_PROXY_CONTAINER=nginx-proxy
 
 volumes:
   conf:
