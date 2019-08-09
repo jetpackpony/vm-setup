@@ -31,3 +31,5 @@ docker run --detach \
 
 The port app is exposed on should be listed. `subdomain.yourdomain.tld` is a 
 domain for which the certificate will be requested and registered.
+
+To skip certificate generation, omit LETSENCRYPT_* variables.
