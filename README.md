@@ -1,35 +1,68 @@
 # Setup
 
-VM should have:
+This setup uses traefik as a reverse-proxy. For detailed steps go to
+[docs](https://docs.traefik.io/user-guide/docker-and-lets-encrypt/).
+VM should have ready:
   * docker and docker-compose installed
   * be accessible from outside
 
-Pull this repo and run:
+Pull this repo and cd into it's directory. Create a file acme.json, which will
+store the certificates and chmod it:
 
 ```bash
-docker-compose up -d
+$ touch acme.json
+$ chmod 600 acme.json
 ```
 
-Check that 2 containers are running:
+Cp `traefik.toml.template` file to `traefik.toml` and replace all YOUR_* values
+with the proper ones.
+
+Create a docker network for web projects:
+```bash
+$ docker network create web
+```
+
+Run the container:
 
 ```bash
-docker ps -a
+$ docker-compose up -d
 ```
 
-To start an app, run:
+Check that the container is running:
 
 ```bash
-docker run --detach \
-    --name app1 \
-    --expose 3000
-    --env "VIRTUAL_HOST=subdomain.yourdomain.tld" \
-    --env "VIRTUAL_PORT=3000" \
-    --env "LETSENCRYPT_HOST=subdomain.yourdomain.tld" \
-    --env "LETSENCRYPT_EMAIL=mail@yourdomain.tld" \
-    docker/app1-image
+$ docker ps
 ```
 
-The port app is exposed on should be listed. `subdomain.yourdomain.tld` is a 
-domain for which the certificate will be requested and registered.
+To start an app, you need to attach labels to the container:
 
-To skip certificate generation, omit LETSENCRYPT_* variables.
+```yml
+version: '3'
+services:
+  app:
+    image: jetpackpony/IMAGE_NAME
+    container_name: CONTAINER_NAME
+    restart: always
+    networks:
+      - web
+      - default
+    expose:
+      - 3000
+    labels:
+      - "traefik.docker.network=web"
+      - "traefik.enable=true"
+      - "traefik.frontend.rule=Host:subdomain.yourdomain.tld"
+      - "traefik.port=3000"
+      - "traefik.protocol=http"
+    env_file:
+      - .env.prod
+    command: npm run start:prod
+
+networks:
+  web:
+    external: true
+```
+
+The app should expose a port and list it in the labels. Docker network should
+be the same one that you've created in the begining.
+The certificate for `subdomain.yourdomain.tld` will be automatically requested.
