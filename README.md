@@ -7,10 +7,11 @@ VM should have ready:
   * be accessible from outside
 
 Pull this repo and cd into it's directory. Create a file acme.json, which will
-store the certificates:
+store the certificates and chmod it:
 
 ```bash
 $ touch acme.json
+$ chmod 600 acme.json
 ```
 
 Cp `traefik.toml.template` file to `traefik.toml` and replace all YOUR_* values
