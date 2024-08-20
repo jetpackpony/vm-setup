@@ -3,21 +3,25 @@
 This setup uses traefik as a reverse-proxy. For detailed steps go to
 [docs](https://docs.traefik.io/user-guide/docker-and-lets-encrypt/).
 VM should have ready:
-  * docker and docker-compose installed
-  * be accessible from outside
 
-Pull this repo and cd into it's directory. Create a file acme.json, which will
-store the certificates and chmod it:
+- docker and docker-compose installed
+- be accessible from outside
+
+Pull this repo and cd into it's directory.
+Create a file acme.json, which will store the certificates and chmod it:
 
 ```bash
-$ touch acme.json
-$ chmod 600 acme.json
+$ mkdir letsencrypt && touch letsencrypt/acme.json && chmod 600 letsencrypt/acme.json
 ```
 
-Cp `traefik.toml.template` file to `traefik.toml` and replace all YOUR_* values
-with the proper ones.
+Create a directory for access logs:
+
+```bash
+$ mkdir accessLogs
+```
 
 Create a docker network for web projects:
+
 ```bash
 $ docker network create web
 ```
@@ -34,29 +38,36 @@ Check that the container is running:
 $ docker ps
 ```
 
-To start an app, you need to attach labels to the container:
+To start an app, you need to attach labels to the container, which setup the routing rules. [Docs](https://doc.traefik.io/traefik/routing/overview/)
 
 ```yml
-version: '3'
+version: "3.7"
 services:
   app:
-    image: jetpackpony/IMAGE_NAME
-    container_name: CONTAINER_NAME
+    image: ${APP_IMAGE_NAME}
+    container_name: ${APP_CONTAINER_NAME}
     restart: always
+    expose:
+      - ${APP_PORT}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.mahrusha.rule=(Host(`${VIRTUAL_HOST}`) && (PathPrefix(`/api`) || PathPrefix(`/image`)))"
+      - "traefik.http.routers.mahrusha.entrypoints=websecure"
+      - "traefik.http.routers.mahrusha.tls.certresolver=myresolver"
+    env_file:
+      - .env
+    environment:
+      - DATA_VOLUME=/data/app
+    volumes:
+      - app:/data
+    command: npm run start:prod
+    depends_on:
+      - mongo
     networks:
       - web
       - default
-    expose:
-      - 3000
-    labels:
-      - "traefik.docker.network=web"
-      - "traefik.enable=true"
-      - "traefik.frontend.rule=Host:subdomain.yourdomain.tld"
-      - "traefik.port=3000"
-      - "traefik.protocol=http"
-    env_file:
-      - .env.prod
-    command: npm run start:prod
+volumes:
+  app:
 
 networks:
   web:
@@ -65,4 +76,4 @@ networks:
 
 The app should expose a port and list it in the labels. Docker network should
 be the same one that you've created in the begining.
-The certificate for `subdomain.yourdomain.tld` will be automatically requested.
+The certificate for `VIRTUAL_HOST` will be automatically requested.

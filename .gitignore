@@ -1,2 +1,2 @@
-acme.json
-traefik.toml
+letsencrypt
+accessLogs
